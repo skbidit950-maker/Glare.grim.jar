@@ -3,11 +3,9 @@ name: Custom Client Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -28,22 +26,27 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      - name: Check project files
+      - name: Extract Forge project
         run: |
-          ls -la
-          test -f gradlew
-          test -f build.gradle
+          unzip -q CustomClient_Forge_26.2_65.1.6_Extracted.zip -d project
+          WRAPPER=$(find project -type f -name gradlew | head -n 1)
+          if [ -z "$WRAPPER" ]; then
+            echo "ERROR: gradlew was not found in the ZIP."
+            find project -maxdepth 4 -type f
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$WRAPPER")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          chmod +x "$WRAPPER"
 
-      - name: Set Gradle permissions
-        run: chmod +x ./gradlew
-
-      - name: Build mod
+      - name: Build Forge mod
+        working-directory: ${{ env.PROJECT_DIR }}
         run: ./gradlew --no-daemon clean build
 
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
           name: CustomClient-Forge-26.2
-          path: build/libs/*.jar
+          path: project/**/build/libs/*.jar
           if-no-files-found: error
           
