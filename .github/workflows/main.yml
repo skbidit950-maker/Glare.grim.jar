@@ -3,9 +3,11 @@ name: Custom Client Build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -28,13 +30,26 @@ jobs:
 
       - name: Extract Forge project
         run: |
-          unzip -q CustomClient_Forge_26.2_65.1.6_Extracted.zip -d project
-          WRAPPER=$(find project -type f -name gradlew | head -n 1)
-          if [ -z "$WRAPPER" ]; then
-            echo "ERROR: gradlew was not found in the ZIP."
-            find project -maxdepth 4 -type f
+          ZIP="CustomClient_Forge_26.2_65.1.6_Fixed.zip"
+
+          if [ ! -f "$ZIP" ]; then
+            echo "ERROR: ZIP file not found: $ZIP"
+            echo "Files in repository:"
+            ls -la
             exit 1
           fi
+
+          mkdir -p project
+          unzip -q "$ZIP" -d project
+
+          WRAPPER=$(find project -type f -name gradlew | head -n 1)
+
+          if [ -z "$WRAPPER" ]; then
+            echo "ERROR: gradlew not found!"
+            find project -maxdepth 5 -type f
+            exit 1
+          fi
+
           PROJECT_DIR=$(dirname "$WRAPPER")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           chmod +x "$WRAPPER"
@@ -49,4 +64,5 @@ jobs:
           name: CustomClient-Forge-26.2
           path: project/**/build/libs/*.jar
           if-no-files-found: error
+          retention-days: 14
           
