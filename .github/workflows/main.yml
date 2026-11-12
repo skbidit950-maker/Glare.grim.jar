@@ -1,0 +1,45 @@
+
+name: Custom Client Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Forge 26.2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      - name: Set Gradle permissions
+        run: chmod +x ./gradlew
+
+      - name: Build mod
+        run: ./gradlew --no-daemon clean build
+
+      - name: Upload mod JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: CustomClient-Forge-26.2
+          path: build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 14
+          
